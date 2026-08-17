@@ -7,9 +7,7 @@ import model.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 import java.sql.Date;
 import java.sql.Time;
 import java.util.List;
@@ -26,9 +24,14 @@ public class NurseDashboard extends JFrame {
     private JComboBox<Doctor> cmbDoctor;
     private JComboBox<Theater> cmbTheater;
 
-    private final Color COLOR_START = new Color(173, 216, 230);
-    private final Color COLOR_END = new Color(0, 102, 204);
-    private final Font MAIN_FONT = new Font("Segoe UI", Font.PLAIN, 14);
+    // Modern Color Palette
+    private final Color COLOR_BG = new Color(241, 245, 249); // slate-100
+    private final Color COLOR_PRIMARY = new Color(37, 99, 235); // blue-600
+    private final Color COLOR_TEXT = new Color(15, 23, 42); // slate-900
+    private final Color COLOR_TEXT_LIGHT = new Color(100, 116, 139); // slate-500
+    private final Font FONT_TITLE = new Font("Segoe UI", Font.BOLD, 24);
+    private final Font FONT_SUBTITLE = new Font("Segoe UI", Font.BOLD, 16);
+    private final Font FONT_BODY = new Font("Segoe UI", Font.PLAIN, 14);
 
     public NurseDashboard(User user) {
         this.currentUser = user;
@@ -36,48 +39,64 @@ public class NurseDashboard extends JFrame {
         this.patientDAO = new PatientDAO();
         this.bookingDAO = new BookingDAO();
 
-        setTitle("Nurse Dashboard - Theater Management System");
-        setSize(1000, 700);
+        setTitle("Nurse Dashboard - Hospital Theater Management System");
+        setSize(950, 720);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        GradientPanel mainPanel = new GradientPanel(COLOR_START, COLOR_END);
-        mainPanel.setLayout(new BorderLayout());
+        // Main Panel
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(COLOR_BG);
         setContentPane(mainPanel);
 
-        // Header
+        // Header Panel (Same flat modern look)
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
-        headerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        headerPanel.setBackground(Color.WHITE);
+        headerPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(226, 232, 240)), // slate-200
+            new EmptyBorder(15, 24, 15, 24)
+        ));
 
-        JLabel lblTitle = new JLabel("Nurse Dashboard");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        lblTitle.setForeground(Color.WHITE);
+        // Header Left
+        JPanel headerLeft = new JPanel(new GridLayout(2, 1, 0, 2));
+        headerLeft.setOpaque(false);
+        JLabel lblTitle = new JLabel("Nurse Portal");
+        lblTitle.setFont(FONT_TITLE);
+        lblTitle.setForeground(COLOR_PRIMARY);
+        JLabel lblWelcome = new JLabel("Logged in as: Nurse " + (user != null ? user.getUsername() : "Nurse"));
+        lblWelcome.setFont(FONT_BODY);
+        lblWelcome.setForeground(COLOR_TEXT_LIGHT);
+        headerLeft.add(lblTitle);
+        headerLeft.add(lblWelcome);
 
-        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
-        userPanel.setOpaque(false);
-
-        JLabel lblUser = new JLabel("Logged in as: " + (user != null ? user.getUsername() : "Nurse"));
-        lblUser.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        lblUser.setForeground(new Color(230, 240, 255));
-
-        // FIXED: Styled Logout
-        JButton btnLogout = new StyledButton("Logout", new Color(220, 53, 69), 12);
-        btnLogout.setPreferredSize(new Dimension(80, 30));
+        // Header Right
+        JPanel headerRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 5));
+        headerRight.setOpaque(false);
+        
+        JButton btnLogout = new JButton("Logout");
+        btnLogout.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnLogout.setForeground(new Color(239, 68, 68)); // red-500
+        btnLogout.setBackground(new Color(254, 242, 242)); // red-50
+        btnLogout.setBorder(BorderFactory.createLineBorder(new Color(252, 165, 165), 1, true));
+        btnLogout.setFocusPainted(false);
+        btnLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLogout.setPreferredSize(new Dimension(90, 35));
+        btnLogout.putClientProperty("JButton.buttonType", "roundRect");
         btnLogout.addActionListener(e -> {
             new LoginFrame().setVisible(true);
             dispose();
         });
+        headerRight.add(btnLogout);
 
-        userPanel.add(lblUser);
-        userPanel.add(btnLogout);
-        headerPanel.add(lblTitle, BorderLayout.WEST);
-        headerPanel.add(userPanel, BorderLayout.EAST);
+        headerPanel.add(headerLeft, BorderLayout.WEST);
+        headerPanel.add(headerRight, BorderLayout.EAST);
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
+        // Tabbed Pane (using modern styling options)
         tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        tabbedPane.setBackground(new Color(230, 240, 255));
+        tabbedPane.putClientProperty("JTabbedPane.showTabSeparators", true);
+        tabbedPane.putClientProperty("JTabbedPane.tabHeight", 40);
 
         loadDropdownData();
 
@@ -86,8 +105,8 @@ public class NurseDashboard extends JFrame {
 
         JPanel contentLimit = new JPanel(new BorderLayout());
         contentLimit.setOpaque(false);
-        contentLimit.setBorder(new EmptyBorder(10, 20, 20, 20));
-        contentLimit.add(tabbedPane);
+        contentLimit.setBorder(new EmptyBorder(24, 24, 24, 24));
+        contentLimit.add(tabbedPane, BorderLayout.CENTER);
         mainPanel.add(contentLimit, BorderLayout.CENTER);
     }
 
@@ -101,23 +120,72 @@ public class NurseDashboard extends JFrame {
         cmbDoctor = new JComboBox<>(docs.toArray(new Doctor[0]));
         cmbTheater = new JComboBox<>(theaters.toArray(new Theater[0]));
 
-        styleComboBox(cmbOpPatient, "Operation Type");
-        styleComboBox(cmbOpBooking, "Operation Type");
-        styleComboBox(cmbDoctor, "Assign Doctor");
-        styleComboBox(cmbTheater, "Assign Theater");
+        styleComboBox(cmbOpPatient);
+        styleComboBox(cmbOpBooking);
+        styleComboBox(cmbDoctor);
+        styleComboBox(cmbTheater);
     }
 
     private JPanel createPatientPanel() {
-        JPanel panel = createGlassPanel();
-        JTextField txtId = createStyledField("Patient ID");
-        JTextField txtName = createStyledField("Full Name");
-        JTextField txtAge = createStyledField("Age");
-        JTextField txtContact = createStyledField("Contact Number");
+        RoundPanel card = new RoundPanel(16, Color.WHITE);
+        card.setLayout(new GridBagLayout());
+        card.setBorder(new EmptyBorder(30, 40, 35, 40));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(10, 15, 10, 15);
+        gbc.weightx = 0.5;
+
+        // Title within card
+        JLabel lblHeader = new JLabel("Register New Patient");
+        lblHeader.setFont(FONT_SUBTITLE);
+        lblHeader.setForeground(COLOR_TEXT);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        gbc.insets = new Insets(0, 15, 20, 15);
+        card.add(lblHeader, gbc);
+
+        // Inputs
+        gbc.gridwidth = 1;
+        gbc.insets = new Insets(8, 15, 8, 15);
+
+        JTextField txtId = createStyledField("e.g., P100");
+        txtId.setText("P101");
+        gbc.gridx = 0; gbc.gridy = 1;
+        card.add(createFormRow("Patient ID", txtId), gbc);
+
+        JTextField txtName = createStyledField("e.g., John Doe");
+        txtName.setText("Jane Smith");
+        gbc.gridx = 1; gbc.gridy = 1;
+        card.add(createFormRow("Full Name", txtName), gbc);
+
+        JTextField txtAge = createStyledField("e.g., 45");
+        txtAge.setText("32");
+        gbc.gridx = 0; gbc.gridy = 2;
+        card.add(createFormRow("Age", txtAge), gbc);
+
+        JTextField txtContact = createStyledField("e.g., 0771234567");
+        txtContact.setText("0779876543");
+        gbc.gridx = 1; gbc.gridy = 2;
+        card.add(createFormRow("Contact Number", txtContact), gbc);
+
         String[] genders = { "Male", "Female", "Other" };
         JComboBox<String> cmbGender = new JComboBox<>(genders);
-        styleComboBox(cmbGender, "Gender");
+        styleComboBox(cmbGender);
+        gbc.gridx = 0; gbc.gridy = 3;
+        card.add(createFormRow("Gender", cmbGender), gbc);
 
-        JButton btnRegister = createActionBtn("Register Patient");
+        gbc.gridx = 1; gbc.gridy = 3;
+        card.add(createFormRow("Surgical Operation Type", cmbOpPatient), gbc);
+
+        // Action Button
+        JButton btnRegister = new JButton("Register Patient Record");
+        btnRegister.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnRegister.setForeground(Color.WHITE);
+        btnRegister.setBackground(COLOR_PRIMARY);
+        btnRegister.setFocusPainted(false);
+        btnRegister.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnRegister.setPreferredSize(new Dimension(0, 45));
+        btnRegister.putClientProperty("JButton.buttonType", "roundRect");
         btnRegister.addActionListener(e -> {
             try {
                 String id = txtId.getText().trim();
@@ -127,6 +195,10 @@ public class NurseDashboard extends JFrame {
                 String gender = (String) cmbGender.getSelectedItem();
                 Operation selectedOp = (Operation) cmbOpPatient.getSelectedItem();
 
+                if (id.isEmpty() || name.isEmpty() || ageStr.isEmpty() || contact.isEmpty()) {
+                    showError("Please fill in all details.");
+                    return;
+                }
                 if (selectedOp == null) {
                     showError("Please select an Operation type.");
                     return;
@@ -137,43 +209,89 @@ public class NurseDashboard extends JFrame {
                     return;
                 }
                 if (!Patient.isValidContact(contact)) {
-                    showError("Invalid Contact Number.");
+                    showError("Invalid Contact Number. (Must start with 0, have 10 digits).");
                     return;
                 }
 
                 Patient p = new Patient(id, name, age, contact, gender, selectedOp.getOpId(), currentUser.getUserId());
                 if (patientDAO.registerPatient(p)) {
-                    showMessage("Patient Registered Successfully!");
+                    showMessage("Patient successfully registered!");
                     clearFields(txtId, txtName, txtAge, txtContact);
                 } else {
-                    showError("Registration Failed. ID might exist.");
+                    showError("Failed to register. Patient ID might already exist.");
                 }
             } catch (NumberFormatException ex) {
-                showError("Age must be a number.");
+                showError("Age must be a valid number.");
             }
         });
 
-        JPanel form = new JPanel(new GridLayout(4, 2, 15, 15));
-        form.setOpaque(false);
-        form.add(txtId);
-        form.add(txtName);
-        form.add(txtAge);
-        form.add(txtContact);
-        form.add(cmbGender);
-        form.add(cmbOpPatient);
-        panel.add(form, BorderLayout.CENTER);
-        panel.add(btnRegister, BorderLayout.SOUTH);
-        return wrapInContainer(panel);
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        gbc.insets = new Insets(25, 15, 0, 15);
+        card.add(btnRegister, gbc);
+
+        return wrapInContainer(card);
     }
 
     private JPanel createBookingPanel() {
-        JPanel panel = createGlassPanel();
-        JTextField txtBookingId = createStyledField("Booking ID");
-        JTextField txtPatientId = createStyledField("Patient ID");
-        JTextField txtDate = createStyledField("Date (YYYY-MM-DD)");
-        JTextField txtTime = createStyledField("Time (HH:MM:SS)");
+        RoundPanel card = new RoundPanel(16, Color.WHITE);
+        card.setLayout(new GridBagLayout());
+        card.setBorder(new EmptyBorder(30, 40, 35, 40));
 
-        JButton btnBook = createActionBtn("Schedule Surgery");
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(10, 15, 10, 15);
+        gbc.weightx = 0.5;
+
+        // Title within card
+        JLabel lblHeader = new JLabel("Schedule a New Surgery");
+        lblHeader.setFont(FONT_SUBTITLE);
+        lblHeader.setForeground(COLOR_TEXT);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        gbc.insets = new Insets(0, 15, 20, 15);
+        card.add(lblHeader, gbc);
+
+        // Inputs
+        gbc.gridwidth = 1;
+        gbc.insets = new Insets(8, 15, 8, 15);
+
+        JTextField txtBookingId = createStyledField("e.g., B100");
+        txtBookingId.setText("B101");
+        gbc.gridx = 0; gbc.gridy = 1;
+        card.add(createFormRow("Booking ID", txtBookingId), gbc);
+
+        JTextField txtPatientId = createStyledField("e.g., P100");
+        txtPatientId.setText("P101");
+        gbc.gridx = 1; gbc.gridy = 1;
+        card.add(createFormRow("Patient ID", txtPatientId), gbc);
+
+        JTextField txtDate = createStyledField("e.g., 2026-08-30");
+        txtDate.setText("2026-08-25");
+        gbc.gridx = 0; gbc.gridy = 2;
+        card.add(createFormRow("Date (YYYY-MM-DD)", txtDate), gbc);
+
+        JTextField txtTime = createStyledField("e.g., 09:30:00");
+        txtTime.setText("10:30:00");
+        gbc.gridx = 1; gbc.gridy = 2;
+        card.add(createFormRow("Time (HH:MM:SS)", txtTime), gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3;
+        card.add(createFormRow("Assign Doctor", cmbDoctor), gbc);
+
+        gbc.gridx = 1; gbc.gridy = 3;
+        card.add(createFormRow("Assign Operating Theater", cmbTheater), gbc);
+
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        card.add(createFormRow("Operation Type", cmbOpBooking), gbc);
+
+        // Action Button
+        JButton btnBook = new JButton("Confirm & Schedule Booking");
+        btnBook.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnBook.setForeground(Color.WHITE);
+        btnBook.setBackground(new Color(16, 185, 129)); // green-500
+        btnBook.setFocusPainted(false);
+        btnBook.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnBook.setPreferredSize(new Dimension(0, 45));
+        btnBook.putClientProperty("JButton.buttonType", "roundRect");
         btnBook.addActionListener(e -> {
             try {
                 String bId = txtBookingId.getText().trim();
@@ -182,46 +300,49 @@ public class NurseDashboard extends JFrame {
                 Theater theater = (Theater) cmbTheater.getSelectedItem();
                 Operation op = (Operation) cmbOpBooking.getSelectedItem();
 
-                if (doc == null || theater == null || op == null) {
-                    showError("Please select Doctor, Theater, and Operation.");
+                if (bId.isEmpty() || pId.isEmpty() || txtDate.getText().isEmpty() || txtTime.getText().isEmpty()) {
+                    showError("Please fill in all booking fields.");
                     return;
                 }
+                if (doc == null || theater == null || op == null) {
+                    showError("Please select a Doctor, Theater, and Operation Type.");
+                    return;
+                }
+
                 Date sqlDate = Date.valueOf(txtDate.getText().trim());
                 Time sqlTime = Time.valueOf(txtTime.getText().trim());
 
                 Booking booking = new Booking(bId, pId, doc.getDoctorId(), theater.getTheaterId(), op.getOpId(),
                         sqlDate, sqlTime, "SCHEDULED");
+
                 if (bookingDAO.addBooking(booking)) {
-                    showMessage("Surgery Scheduled Successfully!");
+                    showMessage("Surgery successfully scheduled!");
                     clearFields(txtBookingId, txtPatientId, txtDate, txtTime);
                 } else {
-                    showError("Booking Failed. Doctor/Theater might be busy.");
+                    showError("Failed to schedule. Doctor/Theater might be busy at this slot or Patient ID is invalid.");
                 }
             } catch (IllegalArgumentException ex) {
-                showError("Invalid Date/Time Format.");
+                showError("Invalid Date or Time Format. Use YYYY-MM-DD and HH:MM:SS.");
             }
         });
 
-        JPanel form = new JPanel(new GridLayout(4, 2, 15, 15));
-        form.setOpaque(false);
-        form.add(txtBookingId);
-        form.add(txtPatientId);
-        form.add(txtDate);
-        form.add(txtTime);
-        form.add(cmbDoctor);
-        form.add(cmbTheater);
-        form.add(cmbOpBooking);
-        panel.add(form, BorderLayout.CENTER);
-        panel.add(btnBook, BorderLayout.SOUTH);
-        return wrapInContainer(panel);
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
+        gbc.insets = new Insets(25, 15, 0, 15);
+        card.add(btnBook, gbc);
+
+        return wrapInContainer(card);
     }
 
-    // === UTILITIES ===
-    private JPanel createGlassPanel() {
-        JPanel panel = new JPanel(new BorderLayout(20, 20));
-        panel.setBackground(new Color(255, 255, 255, 210));
-        panel.setBorder(new EmptyBorder(30, 40, 30, 40));
-        return panel;
+    // === UTILITY LAYOUT BUILDERS ===
+    private JPanel createFormRow(String labelText, JComponent inputComponent) {
+        JPanel row = new JPanel(new BorderLayout(5, 5));
+        row.setOpaque(false);
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        label.setForeground(COLOR_TEXT_LIGHT);
+        row.add(label, BorderLayout.NORTH);
+        row.add(inputComponent, BorderLayout.CENTER);
+        return row;
     }
 
     private JPanel wrapInContainer(JPanel inner) {
@@ -231,25 +352,20 @@ public class NurseDashboard extends JFrame {
         return wrapper;
     }
 
-    private JTextField createStyledField(String title) {
+    private JTextField createStyledField(String placeholder) {
         JTextField field = new JTextField();
-        field.setFont(MAIN_FONT);
-        field.setBorder(BorderFactory.createTitledBorder(null, title, TitledBorder.DEFAULT_JUSTIFICATION,
-                TitledBorder.DEFAULT_POSITION, MAIN_FONT));
+        field.setFont(FONT_BODY);
+        field.setPreferredSize(new Dimension(280, 38));
+        field.putClientProperty("JTextField.placeholderText", placeholder);
+        field.putClientProperty("JComponent.roundRect", true);
         return field;
     }
 
-    private void styleComboBox(JComboBox<?> box, String title) {
-        box.setFont(MAIN_FONT);
-        box.setBorder(BorderFactory.createTitledBorder(null, title, TitledBorder.DEFAULT_JUSTIFICATION,
-                TitledBorder.DEFAULT_POSITION, MAIN_FONT));
-        box.setBackground(new Color(230, 240, 255));
-    }
-
-    private JButton createActionBtn(String text) {
-        StyledButton btn = new StyledButton(text, COLOR_END, 14);
-        btn.setPreferredSize(new Dimension(200, 45));
-        return btn;
+    private void styleComboBox(JComboBox<?> box) {
+        box.setFont(FONT_BODY);
+        box.setPreferredSize(new Dimension(280, 38));
+        box.setBackground(Color.WHITE);
+        box.putClientProperty("JComponent.roundRect", true);
     }
 
     private void showMessage(String msg) {
@@ -263,53 +379,5 @@ public class NurseDashboard extends JFrame {
     private void clearFields(JTextField... fields) {
         for (JTextField f : fields)
             f.setText("");
-    }
-
-    class StyledButton extends JButton {
-        private Color baseColor;
-
-        public StyledButton(String text, Color color, int fontSize) {
-            super(text);
-            this.baseColor = color;
-            setContentAreaFilled(false);
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setOpaque(false);
-            setForeground(Color.WHITE);
-            setFont(new Font("Segoe UI", Font.BOLD, fontSize));
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            if (getModel().isPressed())
-                g2.setColor(baseColor.darker());
-            else
-                g2.setColor(baseColor);
-            g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    }
-
-    class GradientPanel extends JPanel {
-        private Color startColor, endColor;
-
-        public GradientPanel(Color start, Color end) {
-            this.startColor = start;
-            this.endColor = end;
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            GradientPaint gp = new GradientPaint(0, 0, startColor, getWidth(), getHeight(), endColor);
-            g2d.setPaint(gp);
-            g2d.fillRect(0, 0, getWidth(), getHeight());
-        }
     }
 }

@@ -39,11 +39,11 @@ public class BookingDAO {
 
         // 1. First, Double Check Availability (Security Layer)
         if (!isSlotAvailable(doctorId, theaterId, date, time)) {
-            System.out.println("Booking Failed: Slot already taken.");
+            System.out.println("Booking Failed: Slot is already taken.");
             return false;
         }
 
-        // 2. Insert the Booking
+        // 2. Perform the Insert
         String sql = "INSERT INTO bookings (booking_id, patient_id, doctor_id, theater_id, op_id, surgery_date, start_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'SCHEDULED')";
 
         try (Connection conn = DBConnection.getConnection();
@@ -57,15 +57,18 @@ public class BookingDAO {
             stmt.setString(6, date);
             stmt.setString(7, time);
 
-            return stmt.executeUpdate() > 0;
+            int rows = stmt.executeUpdate();
+            return rows > 0;
 
-        } catch (SQLIntegrityConstraintViolationException e) {
-            System.err.println("Error: Duplicate Booking ID or Invalid Reference (Doctor/Patient/Theater ID not found).");
-            return false;
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Error: Duplicate Booking ID or Invalid Reference (Doctor/Patient/Theater ID not found).");
+            // e.printStackTrace(); // Uncomment for debugging
             return false;
         }
+    }
+
+    public boolean addBooking(Booking b) {
+        return addBooking(b.getBookingId(), b.getPatientId(), b.getDoctorId(), b.getTheaterId(), b.getOpId(), b.getSurgeryDate().toString(), b.getStartTime().toString());
     }
 
     // === METHOD 3: GET BOOKINGS FOR A SPECIFIC DOCTOR ===
@@ -86,6 +89,7 @@ public class BookingDAO {
                         rs.getString("patient_id"),
                         rs.getString("doctor_id"),
                         rs.getString("theater_id"),
+                        rs.getString("op_id"),
                         rs.getDate("surgery_date"),
                         rs.getTime("start_time"),
                         rs.getString("status")
@@ -131,6 +135,7 @@ public class BookingDAO {
                         rs.getString("patient_id"),
                         rs.getString("doctor_id"),
                         rs.getString("theater_id"),
+                        rs.getString("op_id"),
                         rs.getDate("surgery_date"),
                         rs.getTime("start_time"),
                         rs.getString("status")
@@ -156,6 +161,33 @@ public class BookingDAO {
 
             return stmt.executeUpdate() > 0;
 
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean completeSurgery(model.PostOperation postOp) {
+        String insertSql = "INSERT INTO post_operations (pop_id, booking_id, prescription_events, side_effects, medicine, next_date) VALUES (?, ?, ?, ?, ?, ?)";
+        String updateSql = "UPDATE bookings SET status = 'COMPLETED' WHERE booking_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement stmt1 = conn.prepareStatement(insertSql)) {
+                stmt1.setString(1, postOp.getPOpId());
+                stmt1.setString(2, postOp.getBookingId());
+                stmt1.setString(3, postOp.getPrescriptionEvents());
+                stmt1.setString(4, postOp.getSideEffects());
+                stmt1.setString(5, postOp.getMedicine());
+                stmt1.setDate(6, postOp.getNextDate());
+                stmt1.executeUpdate();
+            }
+            try (PreparedStatement stmt2 = conn.prepareStatement(updateSql)) {
+                stmt2.setString(1, postOp.getBookingId());
+                stmt2.executeUpdate();
+            }
+            conn.commit();
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

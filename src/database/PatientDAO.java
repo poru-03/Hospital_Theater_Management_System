@@ -34,6 +34,20 @@ public class PatientDAO {
         return list; // Return the list (might be empty if error occurred)
     }
 
+    public boolean patientLogin(String id, String phone) {
+        String sql = "SELECT * FROM patients WHERE patient_id = ? AND contact_number = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, id);
+            stmt.setString(2, phone);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // === METHOD 2: ADD NEW PATIENT ===
     // Returns TRUE if successful, FALSE if it failed
     public boolean addPatient(String patientId, String name, int age, String contact, String gender, String opId, String nurseId) {
@@ -71,5 +85,32 @@ public class PatientDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean registerPatient(model.Patient p) {
+        return addPatient(p.getPatientId(), p.getName(), p.getAge(), p.getContactNumber(), p.getGender(), p.getOpId(), p.getAssignedByNurseId());
+    }
+
+    public model.Patient getPatientById(String patientId) {
+        String sql = "SELECT * FROM patients WHERE patient_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, patientId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return new model.Patient(
+                    rs.getString("patient_id"),
+                    rs.getString("full_name"),
+                    rs.getInt("age"),
+                    rs.getString("contact_number"),
+                    rs.getString("gender"),
+                    rs.getString("op_id"),
+                    rs.getString("assigned_by_nurse_id")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

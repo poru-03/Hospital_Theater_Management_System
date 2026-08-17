@@ -56,9 +56,14 @@ public class Patient {
     // 4. Getters
     public String getPatientId() { return patientId; }
     public String getName() { return name; }
+    public String getFullName() { return name; }
     public int getAge() { return age; }
     public String getContactNumber() { return contactNumber; }
     public String getGender() { return gender; }          // <--- NEW
     public String getOpId() { return opId; }
     public String getAssignedByNurseId() { return assignedByNurseId; } // <--- NEW
+
+    public static boolean isValidAge(int age) {
+        return age > 0 && age < 130;
+    }
 }
